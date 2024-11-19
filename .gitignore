@@ -1,0 +1,15 @@
+# Ignore all data directories
+data/
+tactile_dataset/
+
+# Ignore all zip files
+*.zip
+
+# Ignore all pycache directories
+__pycache__/
+
+# Ignore all log files
+*.log
+
+# Ignore all environment files
+*.env

@@ -1,0 +1,13 @@
+name: brainy
+channels:
+  - anaconda
+  - pytorch
+  - conda-forge
+dependencies:
+  - pytorch=2.5.1
+  - snntorch=0.9.1
+  - seaborn=0.13.2
+  - matplotlib=3.9.2
+  - pandas=2.2.3
+  - scikit-learn=1.5.2
+

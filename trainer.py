@@ -1,7 +1,7 @@
 import torch
 import time
 
-def train_model(model, train_loader, val_loader, optimizer, criterion, num_epochs=20):
+def train_model(model, train_loader, val_loader, optimizer, criterion, num_epochs=20, model_type='snn'):
     best_val_accuracy = 0.0
     best_model_state = None
 
@@ -23,7 +23,7 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, num_epoch
 
             # Forward pass
             spk_rec = model(data)
-            spk_sum = spk_rec.sum(dim=0)
+            spk_sum = spk_rec.sum(dim=0) if model_type == 'snn' else spk_rec
 
             if criterion.__class__.__name__ == 'CrossEntropyLoss':
                 targets = targets.long()
@@ -75,7 +75,7 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, num_epoch
 
                 # Forward pass
                 spk_rec_val = model(val_data)
-                spk_sum_val = spk_rec_val.sum(dim=0)
+                spk_sum_val = spk_rec_val.sum(dim=0) if model_type == 'snn' else spk_rec_val
                 val_loss += criterion(spk_sum_val, val_targets).item()
 
                 # Metrics
@@ -115,7 +115,7 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, num_epoch
 
     return train_losses, train_accuracies, val_losses, val_accuracies
 
-def evaluate_model(model, test_loader, encoding='label'):
+def evaluate_model(model, test_loader, encoding='label', model_type='snn'):
     model.eval()
     total_correct = 0
     total_samples = 0
@@ -125,8 +125,8 @@ def evaluate_model(model, test_loader, encoding='label'):
             data = data.float()
             targets = targets.long()
             spk_rec = model(data)
-            spk_sum = spk_rec.sum(dim=0)
-            _, predicted = spk_sum.max(1)
+            spk_sum = spk_rec.sum(dim=0) if model_type == 'snn' else spk_rec
+            _, predicted = spk_sum.max(-1)
             if encoding == 'label':
                 total_correct += (predicted == targets).sum().item()
             else:

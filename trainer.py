@@ -126,7 +126,7 @@ def evaluate_model(model, test_loader, encoding='label', model_type='snn'):
             targets = targets.long()
             spk_rec = model(data)
             spk_sum = spk_rec.sum(dim=0) if model_type == 'snn' else spk_rec
-            _, predicted = spk_sum.max(-1)
+            _, predicted = spk_sum.max(1)
             if encoding == 'label':
                 total_correct += (predicted == targets).sum().item()
             else:

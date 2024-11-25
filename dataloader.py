@@ -3,7 +3,7 @@ import pandas as pd
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-from encoder import rate_encoding
+from encoder import rate_encoding, temporal_encoding
 import torch
 
 def load_and_merge_data(root, velocity, texture):
@@ -21,7 +21,7 @@ def load_and_merge_data(root, velocity, texture):
         
     return imu_df
 
-def load_data_label_encoded(root, file_name, spike_encoding='rate', num_steps=100, batch_size=32):
+def load_data_label_encoded(root, file_name, spike_encoding='rate', num_steps=100, batch_size=32, device='cpu'):
     file_path = os.path.join(root, file_name)
     df = pd.read_csv(file_path)
 
@@ -45,13 +45,22 @@ def load_data_label_encoded(root, file_name, spike_encoding='rate', num_steps=10
     )
 
     if spike_encoding == 'rate':
-        X_train_tensor = rate_encoding(X_train, num_steps=num_steps)
-        X_val_tensor = rate_encoding(X_val, num_steps=num_steps)
-        X_test_tensor = rate_encoding(X_test, num_steps=num_steps)
+        X_train_tensor = rate_encoding(X_train, num_steps=num_steps, device=device)
+        X_val_tensor = rate_encoding(X_val, num_steps=num_steps, device=device)
+        X_test_tensor = rate_encoding(X_test, num_steps=num_steps, device=device)
 
-        y_train_tensor = torch.tensor(y_train, dtype=torch.long)
-        y_val_tensor = torch.tensor(y_val, dtype=torch.long)
-        y_test_tensor = torch.tensor(y_test, dtype=torch.long)
+        y_train_tensor = torch.tensor(y_train, dtype=torch.long, device=device)
+        y_val_tensor = torch.tensor(y_val, dtype=torch.long, device=device)
+        y_test_tensor = torch.tensor(y_test, dtype=torch.long, device=device)
+    else:
+        X_train_tensor = temporal_encoding(X_train, num_steps=num_steps, device=device)
+        X_val_tensor = temporal_encoding(X_val, num_steps=num_steps, device=device)
+        X_test_tensor = temporal_encoding(X_test, num_steps=num_steps, device=device)
+
+        y_train_tensor = torch.tensor(y_train, dtype=torch.long, device=device)
+        y_val_tensor = torch.tensor(y_val, dtype=torch.long, device=device)
+        y_test_tensor = torch.tensor(y_test, dtype=torch.long, device=device)
+
 
     train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
     val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
@@ -63,7 +72,7 @@ def load_data_label_encoded(root, file_name, spike_encoding='rate', num_steps=10
 
     return train_loader, val_loader, test_loader, num_classes, num_features
 
-def load_data_one_hot_encoded(root, file_name, spike_encoding='rate', num_steps=50, batch_size=32):
+def load_data_one_hot_encoded(root, file_name, spike_encoding='rate', num_steps=50, batch_size=32, device='cpu'):
     file_path = os.path.join(root, file_name)
     df = pd.read_csv(file_path)
 
@@ -86,13 +95,21 @@ def load_data_one_hot_encoded(root, file_name, spike_encoding='rate', num_steps=
     )
 
     if spike_encoding == 'rate':
-        X_train_tensor = rate_encoding(X_train, num_steps=num_steps)
-        X_val_tensor = rate_encoding(X_val, num_steps=num_steps)
-        X_test_tensor = rate_encoding(X_test, num_steps=num_steps)
+        X_train_tensor = rate_encoding(X_train, num_steps=num_steps, device=device)
+        X_val_tensor = rate_encoding(X_val, num_steps=num_steps, device=device)
+        X_test_tensor = rate_encoding(X_test, num_steps=num_steps, device=device)
 
-        y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32)
-        y_val_tensor = torch.tensor(y_val.values, dtype=torch.float32)
-        y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32)
+        y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32, device=device)
+        y_val_tensor = torch.tensor(y_val.values, dtype=torch.float32, device=device)
+        y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32, device=device)
+    else:
+        X_train_tensor = temporal_encoding(X_train, num_steps=num_steps, device=device)
+        X_val_tensor = temporal_encoding(X_val, num_steps=num_steps, device=device)
+        X_test_tensor = temporal_encoding(X_test, num_steps=num_steps, device=device)
+
+        y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32, device=device)
+        y_val_tensor = torch.tensor(y_val.values, dtype=torch.float32, device=device)
+        y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32, device=device)
 
     train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
     val_dataset = TensorDataset(X_val_tensor, y_val_tensor)

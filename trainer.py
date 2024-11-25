@@ -20,23 +20,42 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, num_epoch
         total_samples = 0
         for data, targets in train_loader:
             data = data.float()
-            targets = targets.long()
 
             # Forward pass
             spk_rec = model(data)
             spk_sum = spk_rec.sum(dim=0)
-            loss = criterion(spk_sum, targets)
 
-            # Backward pass and optimization
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            if criterion.__class__.__name__ == 'CrossEntropyLoss':
+                targets = targets.long()
+                loss = criterion(spk_sum, targets)
 
-            # Metrics
-            avg_loss += loss.item()
-            _, predicted = spk_sum.max(1)
-            total_correct += (predicted == targets).sum().item()
-            total_samples += targets.size(0)
+                # Backward pass and optimization
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                # Metrics
+                avg_loss += loss.item()
+                _, predicted = spk_sum.max(1)
+                total_correct += (predicted == targets).sum().item()
+                total_samples += targets.size(0)
+            else:
+                # normalize spk_sum
+                num_steps = data.size(1)
+                spk_sum = spk_sum / num_steps
+                loss = criterion(spk_sum, targets)
+
+                # Backward pass and optimization
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                # Metrics
+                avg_loss += loss.item()
+                _, predicted = spk_sum.max(1)
+                total_correct += (predicted == targets.argmax(dim=1)).sum().item()
+                total_samples += targets.size(0)
+            
 
         train_acc = total_correct / total_samples
         train_loss = avg_loss / len(train_loader)
@@ -61,7 +80,11 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, num_epoch
 
                 # Metrics
                 _, val_predicted = spk_sum_val.max(1)
-                val_correct += (val_predicted == val_targets).sum().item()
+
+                if criterion.__class__.__name__ == 'CrossEntropyLoss':
+                    val_correct += (val_predicted == val_targets).sum().item()
+                else:
+                    val_correct += (val_predicted == val_targets.argmax(dim=1)).sum().item()
                 val_samples += val_targets.size(0)
 
         val_acc = val_correct / val_samples
@@ -92,7 +115,7 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, num_epoch
 
     return train_losses, train_accuracies, val_losses, val_accuracies
 
-def evaluate_model(model, test_loader):
+def evaluate_model(model, test_loader, encoding='label'):
     model.eval()
     total_correct = 0
     total_samples = 0
@@ -104,7 +127,10 @@ def evaluate_model(model, test_loader):
             spk_rec = model(data)
             spk_sum = spk_rec.sum(dim=0)
             _, predicted = spk_sum.max(1)
-            total_correct += (predicted == targets).sum().item()
+            if encoding == 'label':
+                total_correct += (predicted == targets).sum().item()
+            else:
+                total_correct += (predicted == targets.argmax(dim=1)).sum().item()
             total_samples += targets.size(0)
     acc = total_correct / total_samples
     elapsed_time = time.time() - start_time
